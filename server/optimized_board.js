@@ -8,13 +8,16 @@
             black: {from: {x:0,y:5}, to: {x:X_AXIS_SIZE-1, y:Y_AXIS_SIZE-1}}
         };
 
-        var _board;
-        (function _init() {
-            _board = new Array(X_AXIS_SIZE);
-            for (var x = 0; x < _board.length; x++) {
-                _board[x] = new Array(Y_AXIS_SIZE);
+        var _board = {
+            white: {
+                pieces: [],
+                dead: {}
+            },
+            black: {
+                pieces: [],
+                dead: {}
             }
-        })();
+        };
 
         var _validateMove = function(from, to) {
             if (to.x < 0 && to.x >= X_AXIS_SIZE && to.y < 0 && to.y >= Y_AXIS_SIZE) {
@@ -35,6 +38,54 @@
                 y >= validPlacing.from.y && y <= validPlacing.to.y;
         };
 
+        var getPieceAt = function(x, y, side) {
+            if (side) {
+                var pieces = _board[side].pieces;
+                for (var i = 0; i < pieces.length; i++) {
+                    var piece = pieces[i];
+                    if (piece.x == x && piece.y == y) {
+                        return piece;
+                    }
+                }
+                return null;
+            } else {
+                var bPieces = _board.black.pieces;
+                var wPieces = _board.white.pieces;
+                var b = 0;
+                var w = 0;
+
+                var piece;
+                while(b < bPieces.length || w < wPieces.length) {
+                    if (b < bPieces.length) {
+                        piece = bPieces[b];
+                        if (piece.x == x && piece.y == y) {
+                            return piece;
+                        }
+                        b++
+                    }
+                    if (w < wPieces.length) {
+                        piece = wPieces[w];
+                        if (piece.x == x && piece.y == y) {
+                            return piece;
+                        }
+                        w++;
+                    }
+                }
+                return null;
+            }
+        };
+
+        var updatePiecePosition = function(side, x, y, newX, newY) {
+            var pieces = _board[side].pieces;
+            for (var i = 0; i < pieces.length; i++) {
+                var piece = pieces[i];
+                if (piece.x == x && piece.y == y) {
+                    piece.x = newX;
+                    piece.y = newY;
+                }
+            }
+        };
+
         return {
             maxX: X_AXIS_SIZE,
             maxY: Y_AXIS_SIZE,
@@ -44,7 +95,8 @@
                     if (!_validatePlacing(p.pos.x, p.pos.y, side)) {
                         return false;
                     }
-                    _board[p.pos.x][p.pos.y] = {rank: p.rank, color: side};
+                    //_board[p.pos.x][p.pos.y] = {rank: p.rank, color: side};
+                    _board[side].pieces.push({rank: p.rank, x: p.pos.x, y: p.pos.y, color: side});
                     LOGGER.debug("Board.place: " + Util.inspect(p, false, null));
                     // TODO: should this be here???
                     p.rank = null;
@@ -53,16 +105,17 @@
                 return true;
             },
 
-            move: function(from, to, cb) {
+            move: function(from, to, cb, side) {
                 var end = false;
-                var pieceToMove = _board[from.x][from.y];
+                var pieceToMove = getPieceAt(from.x, from.y, side);
                 if (pieceToMove) {
                     if (_validateMove(from, to)) {
                         var actions;
-                        var piece = _board[to.x][to.y];
+                        var piece = getPieceAt(to.x, to.y, side);
                         if (!piece) {
-                            _board[to.x][to.y] = pieceToMove;
-                            _board[from.x][from.y] = null;
+                            //_board[to.x][to.y] = pieceToMove;
+                            //_board[from.x][from.y] = null;
+                            updatePiecePosition(pieceToMove.color, from.x, from.y, to.x, to.y);
                             actions = [{action : "place", from : from, to: to}];
 
                             if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {

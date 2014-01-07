@@ -1,5 +1,5 @@
 (function() {
-    require('./board');
+    require('./optimized_board');
     var uuid = require('node-uuid');
     Game = function(name) {
         var MAX_PLAYERS = 2;

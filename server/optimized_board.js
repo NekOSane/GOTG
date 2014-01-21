@@ -32,22 +32,18 @@
             return false;
         };
 
-        var validatePiecesCount = function(pieces) {
-            var counter = {};
-            for (var i = 0; i < pieces.length; i++) {
-                var p = pieces[i];
-                var rank = p.rank;
-                if (!counter[rank]) {
-                    counter[rank] = 1;
-                } else {
-                    counter[rank]++;
-                }
-
-                if (counter[rank] > Board.PIECES[rank].count) {
-                    return false;
-                }
+        var validatePiecesCount = function(piece, counter) {
+            var rank = piece.rank;
+            if (!counter[rank]) {
+                counter[rank] = 1;
+            } else {
+                counter[rank]++;
             }
-            return true;
+            LOGGER.debug('now validating ' + rank);
+            if (!Board.PIECES[rank]) {
+                return false;
+            }
+            return !(counter[rank] > Board.PIECES[rank].count);
         };
 
         var _validatePlacing = function(x, y, color) {
@@ -112,9 +108,10 @@
             maxX: X_AXIS_SIZE,
             maxY: Y_AXIS_SIZE,
             place: function(side, pieces) {
+                var counter = {};
                 for (var i = 0; i < pieces.length; i++) {
                     var p = pieces[i];
-                    if (!validatePiecesCount(pieces)) {
+                    if (!validatePiecesCount(p, counter)) {
                         return false;
                     }
                     if (!_validatePlacing(p.pos.x, p.pos.y, side)) {
